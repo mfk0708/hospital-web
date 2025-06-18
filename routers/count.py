@@ -1,5 +1,5 @@
 from fastapi import APIRouter,HTTPException
-from datetime import date,datetime
+from datetime import date
 from database import appointments_collection
 
 
@@ -7,47 +7,42 @@ router= APIRouter()
 
 @router.get("/count/{patient_id}")
 def track_appointment_counts(patient_id: str):
-    try:
-        today = date.today().isoformat()
+    today = date.today().isoformat()
 
-        # Only get fields we need and exclude _id
-        appointments = list(appointments_collection.find(
-            {"patient_id": patient_id},
-            {"_id": 0, "date": 1, "status": 1}
-        ))
+    pipeline = [
+        {"$match": {"patient_id": patient_id}},
+        {"$project": {
+            "status": 1,
+            "is_upcoming": {
+                "$cond": [
+                    {"$and": [
+                        {"$eq": ["$status", "Scheduled"]},
+                        {"$gte": ["$date", today]}
+                    ]},
+                    True,
+                    False
+                ]
+            }
+        }},
+        {"$group": {
+            "_id": None,
+            "completed": {"$sum": {"$cond": [{"$eq": ["$status", "Completed"]}, 1, 0]}},
+            "cancelled": {"$sum": {"$cond": [{"$eq": ["$status", "Cancelled"]}, 1, 0]}},
+            "upcoming": {"$sum": {"$cond": ["$is_upcoming", 1, 0]}}
+        }}
+    ]
 
-        if not appointments:
-            raise HTTPException(status_code=404, detail="No appointments found for this patient")
+    result = list(appointments_collection.aggregate(pipeline))
 
-        completed_count = 0
-        upcoming_count = 0
-        cancelled_count=0
+    if not result:
+        raise HTTPException(status_code=404, detail="No appointments found")
 
-        for app in appointments:
-            app_date_raw = app.get("date")
+    final_result= result[0]
+    final_result.pop("_id", None)
 
-            if not app_date_raw or "status" not in app:
-                continue
+    return final_result
 
-            # Convert date to ISO string
-            if isinstance(app_date_raw, datetime):
-                app_date = app_date_raw.date().isoformat()
-            else:
-                app_date = str(app_date_raw)
-
-            if app["status"] == "Completed":
-                completed_count += 1
-            
-            elif app["status"]=="Cancelled":
-                cancelled_count += 1
-            elif app["status"] == "Scheduled" and app_date >= today:
-                upcoming_count += 1
-
-        return {
-            "completed": completed_count,
-            "upcoming": upcoming_count,
-            "cancelled":cancelled_count
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+@router.get('/appointments')
+def find_appointments():
+    appointment=list(appointments_collection.find({},{'_id':0}))
+    return appointment

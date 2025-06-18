@@ -3,14 +3,12 @@ from database import (
     appointments_collection,
     doctors_collection,
     prescription_collection,
-    intake_collections,
     pathology_collection
 )
 
 from datetime import datetime, timedelta
 import random
 from pymongo.errors import PyMongoError
-
 
 names = ["Fahad", "Mubarak", "Rifai", "Sheik", "Afrin", "Durga", "Rifqa", "Sathyasri", "Kaleel", "Nivetha"]
 blood_groups = ["A +ve", "B +ve", "AB -ve", "O +ve", "A -ve"]
@@ -20,16 +18,17 @@ tests = ["Blood Test", "X-Ray", "MRI", "ECG"]
 statuses = ["Pending", "Completed", "In Progress"]
 diagnoses = ["Normal", "Infection", "Deficiency", "Chronic Disease"]
 specializations = ["General", "Cardiology", "ENT", "Dermatology", "Neurology"]
-doctor_name=['Vijay','Dhanush','Ajith','Rajini','Kamal']
+doctor_name = ['Vijay', 'Dhanush', 'Ajith', 'Rajini', 'Kamal']
+
 try:
+    # Clear old data
     patients_collection.delete_many({})
     doctors_collection.delete_many({})
     appointments_collection.delete_many({})
     prescription_collection.delete_many({})
-    intake_collections.delete_many({})
     pathology_collection.delete_many({})
 
- 
+    # Insert doctors
     doctors = []
     for i in range(5):
         doctor = {
@@ -41,18 +40,17 @@ try:
         doctors.append(doctor)
     doctors_collection.insert_many(doctors)
 
- 
+    # Insert patients and related data
     patients = []
     appointments = []
     prescriptions = []
     pathology_reports = []
-    intake_forms = []
 
     for i in range(10):
         patient_id = f"pat{i+1}"
         patient_name = names[i]
 
-        # Patient basic data
+        # Patient with embedded intake_form
         patient = {
             "patient_id": patient_id,
             "name": patient_name,
@@ -65,23 +63,19 @@ try:
                     "date": (datetime.now() - timedelta(days=random.randint(1, 10))).strftime("%Y-%m-%d"),
                     "description": random.choice(diseases)
                 }
-            ]
+            ],
+            "intake_form": {
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "vital_signs": {
+                    "blood_pressure": f"{random.randint(100, 130)}/{random.randint(70, 90)}",
+                    "temperature": f"{random.uniform(97.0, 99.5):.1f}",
+                    "pulse": random.randint(60, 100)
+                }
+            }
         }
         patients.append(patient)
 
-        # Intake form
-        intake_forms.append({
-            "form_id": f"form{i+1}",
-            "patient_id": patient_id,
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "vital_signs": {
-                "blood_pressure": f"{random.randint(100, 130)}/{random.randint(70, 90)}",
-                "temperature": f"{random.uniform(97.0, 99.5):.1f}",
-                "pulse": random.randint(60, 100)
-            }
-        })
-
-        # 1-2 appointments
+        # Appointments
         for j in range(random.randint(1, 2)):
             appointments.append({
                 "appointment_id": f"app{i*2+j+1}",
@@ -92,7 +86,7 @@ try:
                 "status": random.choice(["Scheduled", "Completed", "Cancelled"])
             })
 
-        # 1-2 prescriptions
+        # Prescriptions
         for j in range(random.randint(1, 2)):
             prescriptions.append({
                 "prescription_id": f"presc{i*2+j+1}",
@@ -106,7 +100,7 @@ try:
                 "notes": "Take after meals"
             })
 
-        # 1-2 pathology reports
+        # Pathology Reports
         for j in range(random.randint(1, 2)):
             pathology_reports.append({
                 "report_id": f"rep{i*2+j+1}",
@@ -117,9 +111,8 @@ try:
                 "diagnosis": random.choice(diagnoses)
             })
 
-    # Insert all data
+    # Insert into collections
     patients_collection.insert_many(patients)
-    intake_collections.insert_many(intake_forms)
     appointments_collection.insert_many(appointments)
     prescription_collection.insert_many(prescriptions)
     pathology_collection.insert_many(pathology_reports)
