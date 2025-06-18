@@ -68,7 +68,3 @@ def get_dashboard_data():
 
 
     
-@router.get('/patients')
-def find_patient():
-    patient=list(patients_collection.find({},{'_id':0}))
-    return patient
