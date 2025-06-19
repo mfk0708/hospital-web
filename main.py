@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import dashboard,checkup,pathology,intake,prescription,count
+from routers import dashboard,checkup,pathology,intake,prescription,count,patient
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +22,7 @@ app.include_router(count.router)
 app.include_router(prescription.router)
 app.include_router(pathology.router)
 app.include_router(intake.router)
+app.include_router(patient.router)
 
 
 

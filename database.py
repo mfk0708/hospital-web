@@ -13,5 +13,6 @@ doctors_collection = db["Doctor"]
 pathology_collection=db['Pathology_reports']
 prescription_collection=db['Prescriptions']
 intake_collections=db['Intake_forms']
+counter_collections=db["Counter"]
 
  
