@@ -22,3 +22,21 @@ class PatientCreate(BaseModel):
     profile_picture: Optional[str] = None
     medical_history: Optional[List[MedicalHistoryItem]] = []
     intake_form: Optional[IntakeForm] = None
+
+class PartialVitalSigns(BaseModel):
+    blood_pressure: Optional[str] = None
+    temperature: Optional[str] = None
+    pulse: Optional[int] = None
+
+class PartialIntakeForm(BaseModel):
+    date: Optional[str] = None
+    vital_signs: Optional[PartialVitalSigns] = None
+
+class UpdatePatientModel(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    blood_group: Optional[str] = None
+    profile_picture: Optional[str] = None
+    medical_history: Optional[List[MedicalHistoryItem]] = None
+    intake_form: Optional[PartialIntakeForm] = None
