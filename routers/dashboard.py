@@ -1,6 +1,6 @@
 from fastapi import APIRouter,HTTPException
 from datetime import datetime
-from database import appointments_collection,patients_collection,doctors_collection
+from database import appointments_collection,patients_collection,counter_collections,prescription_collection
 
 
 router= APIRouter()
@@ -67,8 +67,12 @@ def get_dashboard_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-    
-@router.get('/patients')
+@router.get("/patients")
 def find_patient():
-    patient=list(patients_collection.find({},{'_id':0}))
+    patient=list(patients_collection.find({},{"_id":0}))
     return patient
+
+@router.get("/counter")
+def find_counter():
+    counter =list(counter_collections.find({},{"_id":1,"sequence_value":1}))
+    return counter

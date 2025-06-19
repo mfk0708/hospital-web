@@ -3,13 +3,26 @@ from database import (
     appointments_collection,
     doctors_collection,
     prescription_collection,
-    pathology_collection
+    pathology_collection,
+    counter_collections
 )
 
 from datetime import datetime, timedelta
 import random
 from pymongo.errors import PyMongoError
+from pymongo import ReturnDocument
 
+# --- Helper to generate ordered custom IDs ---
+def get_next_id(prefix: str) -> str:
+    result = counter_collections.find_one_and_update(
+        {"_id": prefix},
+        {"$inc": {"sequence_value": 1}},
+        return_document=ReturnDocument.AFTER,
+        upsert=True
+    )
+    return f"{prefix}{result['sequence_value']}"
+
+# Sample data pools
 names = ["Fahad", "Mubarak", "Rifai", "Sheik", "Afrin", "Durga", "Rifqa", "Sathyasri", "Kaleel", "Nivetha"]
 blood_groups = ["A +ve", "B +ve", "AB -ve", "O +ve", "A -ve"]
 diseases = ["Fever", "Diabetes", "Hypertension", "Asthma", "Allergy"]
@@ -21,18 +34,20 @@ specializations = ["General", "Cardiology", "ENT", "Dermatology", "Neurology"]
 doctor_name = ['Vijay', 'Dhanush', 'Ajith', 'Rajini', 'Kamal']
 
 try:
-    # Clear old data
+    # Clear existing collections (optional for dev/test)
     patients_collection.delete_many({})
     doctors_collection.delete_many({})
     appointments_collection.delete_many({})
     prescription_collection.delete_many({})
     pathology_collection.delete_many({})
+    counter_collections.delete_many({})  # Reset counters
 
     # Insert doctors
     doctors = []
     for i in range(5):
+        doctor_id = get_next_id("doc")
         doctor = {
-            "doctor_id": f"doc{i+1}",
+            "doctor_id": doctor_id,
             "name": f"Dr. {doctor_name[i]}",
             "specialization": specializations[i],
             "phone": f"+91-98765{1000+i}"
@@ -47,10 +62,9 @@ try:
     pathology_reports = []
 
     for i in range(10):
-        patient_id = f"pat{i+1}"
+        patient_id = get_next_id("pat")
         patient_name = names[i]
 
-        # Patient with embedded intake_form
         patient = {
             "patient_id": patient_id,
             "name": patient_name,
@@ -78,9 +92,9 @@ try:
         # Appointments
         for j in range(random.randint(1, 2)):
             appointments.append({
-                "appointment_id": f"app{i*2+j+1}",
+                "appointment_id": get_next_id("apt"),
                 "patient_id": patient_id,
-                "doctor_id": f"doc{(i % 5) + 1}",
+                "doctor_id": f"doc{(i % 5) + 1}",  # Keep using doc1 - doc5
                 "date": (datetime.now() + timedelta(days=random.randint(1, 7))).strftime("%Y-%m-%d"),
                 "time": f"{random.randint(9,16)}:{random.choice(['00', '30'])}",
                 "status": random.choice(["Scheduled", "Completed", "Cancelled"])
@@ -89,7 +103,7 @@ try:
         # Prescriptions
         for j in range(random.randint(1, 2)):
             prescriptions.append({
-                "prescription_id": f"presc{i*2+j+1}",
+                "prescription_id": get_next_id("presc"),
                 "patient_id": patient_id,
                 "doctor_id": f"doc{(i % 5) + 1}",
                 "date": datetime.now().strftime("%Y-%m-%d"),
@@ -103,7 +117,7 @@ try:
         # Pathology Reports
         for j in range(random.randint(1, 2)):
             pathology_reports.append({
-                "report_id": f"rep{i*2+j+1}",
+                "report_id": get_next_id("rep"),
                 "patient_id": patient_id,
                 "date": (datetime.now() - timedelta(days=random.randint(1, 5))).strftime("%Y-%m-%d"),
                 "test_name": random.choice(tests),
@@ -111,13 +125,13 @@ try:
                 "diagnosis": random.choice(diagnoses)
             })
 
-    # Insert into collections
+    # Insert all data
     patients_collection.insert_many(patients)
     appointments_collection.insert_many(appointments)
     prescription_collection.insert_many(prescriptions)
     pathology_collection.insert_many(pathology_reports)
 
-    print("✅ Structured sample data inserted successfully for all patients.")
+    print("✅ Sample data with unique IDs inserted successfully.")
 
 except PyMongoError as e:
     print("❌ MongoDB Error:", e)
