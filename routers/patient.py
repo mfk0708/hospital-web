@@ -82,3 +82,11 @@ def update_patient(patient_id: str, updated_data: UpdatePatientModel):
         "message": "Patient updated successfully",
         "updated_fields": update_query
     }
+
+@router.get('/patients')
+def find_patients():
+    patients = list(patients_collection.find({}, {'_id': 0}))
+    return {
+        "message": f"Found {len(patients)} patient(s).",
+        "patients": patients
+    }

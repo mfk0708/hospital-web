@@ -58,6 +58,10 @@ class AppointmentStatus(str, Enum):
     scheduled = "Scheduled"
     postponed = "Postponed"
 
+    
+class StatusUpdate(BaseModel):
+    status: AppointmentStatus
+
 class PrescriptionIn(BaseModel):
     patient_id: str
     doctor_id: str

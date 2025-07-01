@@ -1,8 +1,8 @@
 from fastapi import APIRouter,HTTPException
 from datetime import datetime
-from database import appointments_collection,patients_collection,counter_collections,prescription_collection
+from database import appointments_collection,patients_collection
 from utils.id_generator import get_next_sequence
-from schema import AppointmentCreate,AppointmentStatus
+from schema import AppointmentCreate,StatusUpdate
 from pymongo import ReturnDocument
 
 
@@ -100,18 +100,39 @@ def create_appointment(data: AppointmentCreate):
 
 
 @router.patch('/appointments/{apt_id}')
-def update_appstatus(apt_id: str, status: AppointmentStatus):
+def update_appstatus(apt_id: str, status: StatusUpdate):
     updated_appointment = appointments_collection.find_one_and_update(
         {"appointment_id": apt_id},
-        {"$set": {"status": status}},
+        {"$set": {"status": status.status}},  # <- Fix here: extract enum value
         return_document=ReturnDocument.AFTER
     )
 
     if not updated_appointment:
         return {"message": "Appointment cannot be found"}
 
+    # Remove the _id key before returning
+    updated_appointment.pop("_id", None)
+
     return {
         "message": "Appointment status updated successfully",
-
+        "appointment": updated_appointment
     }
+
     
+@router.get('/appointments')
+def find_appointments():
+    appointment = list(appointments_collection.find({},{"_id":0}))
+    return appointment
+
+
+@router.delete("/appointments/{appointment_id}")
+def delete_appointments(appointment_id: str):
+    result = appointments_collection.delete_one({"appointment_id": appointment_id})
+
+    if result.deleted_count == 1:
+        return {"message": f"Appointment {appointment_id} deleted successfully."}
+    else:
+        raise HTTPException(status_code=404, detail=f"Appointment {appointment_id} not found.")
+
+
+
