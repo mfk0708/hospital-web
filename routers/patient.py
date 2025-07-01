@@ -10,13 +10,13 @@ router = APIRouter()
 @router.post("/patients")
 def create_patient(patient: PatientCreate):
     try:
-        patient_id = get_next_sequence("pat")  #
-        received_data = patient.dict()         
+        patient_id = get_next_sequence("pat")  # Step 1: Generate ID first
+        received_data = patient.dict()         # Step 2: Get received data
 
-
+        # Step 3: Manually create dict with patient_id first
         patient_data = {"patient_id": patient_id, **received_data}
 
-        patients_collection.insert_one(patient_data)  
+        patients_collection.insert_one(patient_data)  # Step 4: Insert
         return {"message": "Patient added successfully", "patient_id": patient_id}
 
     except PyMongoError as e:
@@ -63,6 +63,7 @@ def update_patient(patient_id: str, updated_data: UpdatePatientModel):
         new_intake = update_dict["intake_form"]
         update_dict["intake_form"] = {**existing_intake, **new_intake}
 
+    # ✅ Handle appending to medical_history
     if "medical_history" in update_dict:
         update_query["$push"] = {
             "medical_history": {
@@ -70,6 +71,7 @@ def update_patient(patient_id: str, updated_data: UpdatePatientModel):
             }
         }
 
+    # ✅ Handle remaining fields with $set
     if update_dict:
         update_query["$set"] = update_dict
 

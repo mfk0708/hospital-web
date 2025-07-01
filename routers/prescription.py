@@ -1,5 +1,5 @@
 from fastapi import APIRouter,HTTPException
-from schema import Prescription
+from schema import PrescriptionIn,Prescription
 from pymongo import DESCENDING
 from database import prescription_collection
 from datetime import datetime
@@ -10,16 +10,21 @@ router =APIRouter()
 
 
 @router.post('/prescription')
-def create_prescription(prescription: Prescription):
-    prescription.prescription_id = get_next_sequence("presc")
-    prescription.date = datetime.today().strftime("%Y-%m-%d")
+def create_prescription(prescription: PrescriptionIn):
+    # Add ID and date here
+    full_prescription = Prescription(
+        **prescription.dict(),
+        prescription_id=get_next_sequence("presc"),
+        date=datetime.today().strftime("%Y-%m-%d")
+    )
 
-    prescription_collection.insert_one(prescription.dict())
+    prescription_collection.insert_one(full_prescription.dict())
 
     return {
         "message": "Prescription added successfully.",
-        **prescription.dict()
+        **full_prescription.dict()
     }
+
     
 @router.get('/prescription/{patient_id}')
 def get_prescriptions_by_patient(patient_id: str):
