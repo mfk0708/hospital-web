@@ -9,7 +9,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # or ["http://localhost:3000"] to restrict
+    allow_origins=["http://localhost:5173",
+                    "https://b799-2409-40f4-128-8af0-85c3-7e3d-598-de5b.ngrok-free.app"],  # or ["http://localhost:3000"] to restrict
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -42,7 +42,3 @@ def track_appointment_counts(patient_id: str):
 
     return final_result
 
-@router.get('/appointments')
-def find_appointments():
-    appointment=list(appointments_collection.find({},{'_id':0}))
-    return appointment

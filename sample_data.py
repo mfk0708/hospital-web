@@ -68,7 +68,7 @@ try:
         patient = {
             "patient_id": patient_id,
             "name": patient_name,
-            "age": 22 if patient_name == "Fahad" else 21,
+            "dob": (datetime.now() - timedelta(days=random.randint(18 * 365, 60 * 365))).strftime("%Y-%m-%d"),
             "gender": random.choice(["Male", "Female"]),
             "blood_group": random.choice(blood_groups),
             "profile_picture": f"{patient_name.lower()}.jpg",
@@ -94,7 +94,7 @@ try:
             appointments.append({
                 "appointment_id": get_next_id("apt"),
                 "patient_id": patient_id,
-                "doctor_id": f"doc{(i % 5) + 1}",  # Keep using doc1 - doc5
+                "doctor_id": f"doc{(i % 5) + 1}",
                 "date": (datetime.now() + timedelta(days=random.randint(1, 7))).strftime("%Y-%m-%d"),
                 "time": f"{random.randint(9,16)}:{random.choice(['00', '30'])}",
                 "status": random.choice(["Scheduled", "Completed", "Cancelled"])
@@ -131,7 +131,7 @@ try:
     prescription_collection.insert_many(prescriptions)
     pathology_collection.insert_many(pathology_reports)
 
-    print("✅ Sample data with unique IDs inserted successfully.")
+    print("✅ Sample data with unique IDs and DOB inserted successfully.")
 
 except PyMongoError as e:
     print("❌ MongoDB Error:", e)
