@@ -1,6 +1,9 @@
 from fastapi import APIRouter,HTTPException
 from datetime import datetime
 from database import appointments_collection,patients_collection,counter_collections,prescription_collection
+from utils.id_generator import get_next_sequence
+from schema import AppointmentCreate,AppointmentStatus
+from pymongo import ReturnDocument
 
 
 router= APIRouter()
@@ -33,7 +36,7 @@ def get_dashboard_data():
 
         patient_ids = [appt["_id"] for appt in appointments]
 
-        # Bulk fetch patient details
+     
         patients = {
             p["patient_id"]: p
             for p in patients_collection.find({"patient_id": {"$in": patient_ids}}, {"_id": 0})
@@ -67,12 +70,48 @@ def get_dashboard_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/patients")
-def find_patient():
-    patient=list(patients_collection.find({},{"_id":0}))
-    return patient
 
-@router.get("/counter")
-def find_counter():
-    counter =list(counter_collections.find({},{"_id":1,"sequence_value":1}))
-    return counter
+@router.post("/appointments")
+def create_appointment(data: AppointmentCreate):
+    conflict = appointments_collection.find_one({
+        "doctor_id": data.doctor_id,
+        "date": data.date,
+        "time": data.time,
+        "status": {"$ne": "Cancelled"}
+    })
+
+    if conflict:
+        return {"error": "Time slot is already booked for this doctor"}
+
+    # Generate unique appointment_id
+    appointment_id = get_next_sequence("apt")
+
+    new_appointment = {
+        "appointment_id": appointment_id,
+        **data.dict()
+    }
+
+    appointments_collection.insert_one(new_appointment)
+
+    return {
+    "message": "Appointment created successfully",
+    "appointment_id": new_appointment["appointment_id"]
+}
+
+
+@router.patch('/appointments/{apt_id}')
+def update_appstatus(apt_id: str, status: AppointmentStatus):
+    updated_appointment = appointments_collection.find_one_and_update(
+        {"appointment_id": apt_id},
+        {"$set": {"status": status}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    if not updated_appointment:
+        return {"message": "Appointment cannot be found"}
+
+    return {
+        "message": "Appointment status updated successfully",
+
+    }
+    
