@@ -1,11 +1,13 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import gridfs
 
 load_dotenv()
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("DB_NAME1")]
+fs = gridfs.GridFS(db)
 
 patients_collection = db["Patients"]
 appointments_collection = db["Appointment"]

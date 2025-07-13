@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../Frontend Course"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Frontend Course"
+	}
+}

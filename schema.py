@@ -1,6 +1,7 @@
 from pydantic import BaseModel,Field
 from typing import Optional, List
 from enum import Enum
+from bson import ObjectId
 
 class VitalSigns(BaseModel):
     blood_pressure: str
@@ -23,6 +24,7 @@ class PatientCreate(BaseModel):
     profile_picture: Optional[str] = None
     medical_history: Optional[List[MedicalHistoryItem]] = Field(default_factory=list)
     intake_form: Optional[IntakeForm] = None
+    doctor_comments: Optional[List[str]] = Field(default_factory=list)  
 
 class PartialVitalSigns(BaseModel):
     blood_pressure: Optional[str] = None
@@ -41,6 +43,7 @@ class UpdatePatientModel(BaseModel):
     profile_picture: Optional[str] = None
     medical_history: Optional[List[MedicalHistoryItem]] = None
     intake_form: Optional[PartialIntakeForm] = None
+    doctor_comments: Optional[List[str]] = None
 
 
 
@@ -53,10 +56,9 @@ class AppointmentCreate(BaseModel):
 
 
 class AppointmentStatus(str, Enum):
-    cancelled = "Cancelled"
     completed = "Completed"
     scheduled = "Scheduled"
-    postponed = "Postponed"
+   
 
     
 class StatusUpdate(BaseModel):
@@ -64,7 +66,6 @@ class StatusUpdate(BaseModel):
 
 class PrescriptionIn(BaseModel):
     patient_id: str
-    doctor_id: str
     medicine: str
     dosage: str
     frequency: str
@@ -76,15 +77,51 @@ class Prescription(PrescriptionIn):
     date: str
 
 class PathologyReportIn(BaseModel):
-    patient_id: str
+    pat_id: str
     test_name: str
-    status: str
-    diagnosis: str
+    result: str
 
 class PathologyReport(BaseModel):
     report_id: str
-    patient_id: str
-    date: str
+    pat_id: str
     test_name: str
+    result: str
+    date: str
     status: str
-    diagnosis: str
+    file_path: Optional[str] = None  
+
+
+class DashboardUpdate(BaseModel):
+    date: Optional[str]
+    time: Optional[str]
+    status: Optional[str]
+    patient_name: Optional[str]
+    patient_age: Optional[int]
+    gender: Optional[str]
+    blood_group: Optional[str]
+    disease: Optional[str]
+    doctor_name: Optional[str]
+
+
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return str(v)
+
+class PathologyResponseModel(BaseModel):
+    id: PyObjectId = Field(..., alias="_id")
+    name: str
+    # add other fields...
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {
+            ObjectId: str
+        }    

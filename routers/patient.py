@@ -3,7 +3,8 @@ from database import patients_collection
 from schema import PatientCreate, UpdatePatientModel
 from utils.id_generator import get_next_sequence
 from pymongo.errors import PyMongoError
-
+from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def delete_patient(patient_id: str):
     
 
 
-@router.put("/patients/{patient_id}")
+@router.put("/patient/{patient_id}")
 def update_patient(patient_id: str, updated_data: UpdatePatientModel):
     update_dict = updated_data.dict(exclude_none=True)
 
@@ -83,10 +84,32 @@ def update_patient(patient_id: str, updated_data: UpdatePatientModel):
         "updated_fields": update_query
     }
 
-@router.get('/patients')
-def find_patients():
-    patients = list(patients_collection.find({}, {'_id': 0}))
-    return {
-        "message": f"Found {len(patients)} patient(s).",
-        "patients": patients
-    }
+class DoctorCommentRequest(BaseModel):
+    patient_id: str
+    doctor_comment: Optional[str] = None
+    symptoms: Optional[str] = None
+
+@router.post("/comment")
+def add_doctor_comment(data: DoctorCommentRequest):
+    try:
+        update_fields = {}
+        if data.doctor_comment is not None:
+            update_fields["doctor_comment"] = data.doctor_comment
+        if data.symptoms is not None:
+            update_fields["symptoms"] = data.symptoms
+
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="No data provided to update.")
+
+        result = patients_collection.update_one(
+            {"patient_id": data.patient_id},
+            {"$set": update_fields}
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Patient not found")
+
+        return {"message": "Patient record updated successfully"}
+
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=str(e))

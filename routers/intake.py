@@ -4,13 +4,15 @@ from database import patients_collection
 
 router=APIRouter()
 
-@router.get("/intake/{patient_id}")
-def find_intake(patient_id: str):
-    patient = patients_collection.find_one(
+@router.get("/profile/{patient_id}")
+def find_patient(patient_id: str):
+    # Fetch all documents with the given patient_id
+    patients = list(patients_collection.find(
         {"patient_id": patient_id},
-        {"_id": 0, "intake_form": 1}
-    )
-    if not patient or "intake_form" not in patient:
-        raise HTTPException(status_code=404, detail="Intake form not found for this patient")
-    
-    return patient["intake_form"]
+        {"_id": 0}
+    ))
+
+    if not patients:
+        raise HTTPException(status_code=404, detail="No patient found with this ID")
+
+    return patients
