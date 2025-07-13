@@ -12,7 +12,7 @@ API_KEY = os.getenv("API_KEY")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://healthdash-app.netlify.app"],  # include protocol
+    allow_origins=["https://healthdash-app.netlify.app","http://localhost:5173","http://localhost:5174"],  # include protocol
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
