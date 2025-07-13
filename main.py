@@ -16,13 +16,20 @@ async def enforce_api_key(request: Request, call_next):
     if request.url.path == "/favicon.ico":
         return Response(status_code=204)
 
+    # Fail-fast if API_KEY is not loaded
+    if not API_KEY:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "API_KEY is not set on server"}
+        )
+
     api_key = request.headers.get("x-api-key")
     if api_key != API_KEY:
         return JSONResponse(
             status_code=401,
             content={"detail": "Unauthorized: Invalid or missing API Key"}
         )
-    
+
     response = await call_next(request)
     return response
 
